@@ -1,0 +1,473 @@
+#Ican Python Personal Project by C. Berger
+
+import tkinter as tk
+#only used in a few spots, dw about it
+from functools import partial
+import math
+
+window = tk.Tk()
+
+window.geometry("450x600")
+window.title("Sudoku")
+
+#variables
+#page is what page ur one (1 is title, 2 is any game, 3 is win and 4 is lose)
+#inputs is the value being assigned by buttons
+page = 1
+inputs = ""
+mistake = "0/3"
+timer = -1
+timerrnning = False
+#basic board (so i dont need individual code for each board)
+#also filled out boards are hard to read my b
+safe = []
+board = []
+easy = [
+    "" ,"6","" ,"3","" ,"" ,"8","9","2",
+    "3","" ,"4","" ,"" ,"8","" ,"6","" ,
+    "" ,"2","5","" ,"" ,"6","" ,"7","3",
+    "" ,"3","6","7","1","" ,"" ,"" ,"8",
+    "" ,"" ,"" ,"" ,"2","" ,"" ,"" ,"9",
+    "4","7","9","" ,"5","" ,"2","" ,"" ,
+    "" ,"1","" ,"5","8","" ,"6","" ,"4",
+    "" ,"" ,"2","" ,"" ,"" ,"9","5","" ,
+    "5","" ,"" ,"" ,"6","" ,"3","" ,"1"
+]
+medium = [
+    "8","" ,"7","6","" ,"5","2","" ,"4",
+    "" ,"" ,"6","3","" ,"7","5","" ,"" ,
+    "" ,"3","" ,"" ,"" ,"8","" ,"" ,"6",
+    "1","" ,"" ,"" ,"6","" ,"8","2","" ,
+    "" ,"6","" ,"" ,"" ,"" ,"" ,"9","" ,
+    "" ,"5","4","" ,"1","" ,"" ,"" ,"7",
+    "7","" ,"" ,"9","" ,"" ,"" ,"8","" ,
+    "" ,"" ,"3","2","" ,"4","1","" ,"" ,
+    "9","" ,"1","5","" ,"6","7","" ,"3"
+]
+hard = [
+    "2","" ,"1","" ,"" ,"" ,"5","" ,"6",
+    "8","" ,"9","" ,"3","" ,"4","" ,"2",
+    "" ,"" ,"" ,"5","" ,"2","" ,"" ,"" ,
+    "" ,"" ,"8","6","" ,"4","2","" ,"" ,
+    "" ,"" ,"" ,"" ,"" ,"" ,"" ,"" ,"" ,
+    "" ,"" ,"7","8","" ,"5","1","" ,"" ,
+    "" ,"" ,"" ,"9","" ,"3","" ,"" ,"" ,
+    "4","" ,"6","" ,"7","" ,"3","" ,"5",
+    "7","" ,"5","" ,"" ,"" ,"9","" ,"1"
+]
+extreme = [
+    "9","" ,"" ,"7","" ,"" ,"1","" ,"" ,
+    "" ,"2","" ,"" ,"1","" ,"" ,"" ,"7",
+    "" ,"" ,"" ,"5","" ,"" ,"6","" ,"" ,
+    "" ,"" ,"" ,"" ,"" ,"" ,"5","6","" ,
+    "" ,"" ,"" ,"" ,"" ,"3","2","" ,"" ,
+    "1","" ,"" ,"" ,"5","" ,"" ,"" ,"8",
+    "2","4","" ,"" ,"8","1","3","" ,"" ,
+    "" ,"1","5","4","2","" ,"" ,"" ,"6",
+    "" ,"" ,"9","" ,"" ,"" ,"" ,"" ,"2"
+]
+
+#switching to board based off difficulty
+def diffi(culty):
+    #culty is the difficulty based off the button
+    global page, board, easy, medium, hard, extreme, safe, difficulty, timerrnning
+    difficulty = culty
+    #setting the board with the proper difficulty
+    if culty == "Easy":
+        #you need to do it in a loop because otherwise when you update board it updates safe
+        for i in range(81):
+            board.append(easy[i])
+            safe.append(easy[i])
+            i += 1
+        createboard()
+    elif culty == "Medium":
+        board = medium
+        for i in range(81):
+            board.append(medium[i])
+            safe.append(medium[i])
+            i += 1
+        createboard()
+    elif culty == "Hard":
+        board = hard
+        for i in range(81):
+            board.append(hard[i])
+            safe.append(hard[i])
+            i += 1
+        createboard()
+    else:
+        board = extreme
+        for i in range(81):
+            board.append(extreme[i])
+            safe.append(extreme[i])
+            i += 1
+        createboard()
+    #timer stuff
+    timerrnning = True
+    timing()
+
+    #switching to game
+    page = 2
+    pg1frame.pack_forget()
+    pg2frame.pack(fill = "both", expand = True)
+    #difficulty label
+    dif = tk.Label(labels, bg = "#21232C", fg = "white", text = culty, font = ('Arial', 18), padx = 100)
+    dif.grid(row = 0, column = 1)
+
+
+#switching to win page
+def win():
+    global page, board, difficulty, mistake
+    win = True
+    #checking if the board is empty
+    for i in range(81):
+        if board[i] == "":
+            win = False
+        i += 1
+    #if board is full, switch
+    if win == True:
+        page = 3
+        pg2frame.pack_forget()
+        pg3frame.pack(fill = "both", expand = True)
+        minutes.config(text = display)
+        diff.config(text = difficulty)
+        uttatree.config(text = mistake)
+
+
+#timer stuff
+def timing():
+    def count():
+        global timer, timerrnning, display
+        if timerrnning == True:
+            if timer == -1:
+                display = "0:00"
+            #for the extra zero before digit
+            elif timer <= 9:
+                display = "0:0" + str(timer)
+            elif timer <= 59:
+                display =  "0:" + str(timer)
+            #over a min
+            else:
+                num = timer / 60
+                #math.floor is just rounding down (3.45 -> 3)
+                num = math.floor(num)
+                if timer - num * 60 <= 9:
+                    display = str(num) + ":0" + str(timer - num * 60)
+                else:
+                    display = str(num) + ":" + str(timer - num * 60)
+            time.config(text = display)
+            #1000 = 1000 miliseconds, basically time.sleep(1)
+            time.after(1000, count)    
+            timer += 1
+    #it repeats continuously
+    count()
+
+
+
+#switching to fail page
+def lose():
+    global page
+    page = 4
+    pg2frame.pack_forget()
+    pg4frame.pack(fill = "both", expand = True)
+
+
+#after game is over, returning to titlepage
+def back():
+    global page, mistake, timer, weird, inputs, difficulty, safe, board, timerrnning
+    if page == 3:
+        pg3frame.pack_forget()
+    elif page == 4:
+        pg4frame.pack_forget()
+    page = 1
+    mistake = "0/3"
+    mistakes.config(text = mistake)
+    difficulty = "none"
+    weird = 0
+    timer = -1
+    timerrnning = False
+    inputs = ""
+    board = []
+    safe = []
+    pg1frame.pack(fill = "both", expand = True)
+
+
+#setting the value that can be inputted in the board
+def choice(value):
+    global inputs
+    if value == "C":
+        inputs = ""
+    else:
+        inputs = value
+
+
+#setting mistakes
+def mistaken():
+    global mistake
+    if mistake == "0/3":
+        mistake = "1/3"
+        mistakes.config(text = mistake)
+    elif mistake == "1/3":
+        mistake = "2/3"
+        mistakes.config(text = mistake)
+    else:
+        lose()
+
+
+#!!!what actually creates the sudoku board!!!
+#honestly i have no clue how this works either, its a mess and i am so sorry
+def createboard():
+    #index = which individual box, square is 3x3 box, row and column are self explanatory
+    index = 0
+    square = 0
+    boxrow = 0
+    boxcolumn = 0
+    for g in range(9):
+        g +=1
+        squareframe = tk.Frame(boardframe, bd = 1, bg = "black")
+        for i in range(3):
+            i += 1
+            for f in range(3):
+                f += 1
+                #inserting is just var for command
+                #for some reason values are only saved for individual buttons using it
+                #it just goes partial(name of command,value1,value2)
+                inserting = partial(inset, index, square, boxrow, boxcolumn)
+                button = tk.Button(squareframe, text = board[index], bd = 1, font = ('Arial', 15), height = 1, width = 3, command = inserting)
+                button.grid(row = i, column = f, sticky = tk.W + tk.E)
+                button.config(relief = "solid")
+                #setting the colours for the boxes (if its part of the default board its gray)
+                if safe[index] != "":
+                    button.config(bg = "#c4c4c4")
+                else:
+                    button.config(bg = "white")
+                index += 1 
+                boxcolumn += 1
+
+            index += 6
+            boxcolumn -= 3
+            boxrow += 1
+
+        #this looks terrible, its the grid for the 3x3 squares based off g value
+        #also adjusts boxrow and boxcolumn so its accurate 
+        #rows
+        if g == 1 or g == 2 or g == 3:
+            squareframe.grid(row = 0)
+            index = 0
+            boxrow = 0
+        elif g == 4 or g == 5 or g == 6:
+            squareframe.grid(row = 1)
+            index = 27
+            boxrow = 3
+        else:
+            squareframe.grid(row = 2)
+            index = 54
+            boxrow = 6
+        #columns
+        if g == 1 or g == 4 or g == 7:
+            squareframe.grid(column = 0)
+            boxcolumn = 3
+            index += 3
+        elif g == 2 or g == 5 or g == 8:
+            squareframe.grid(column = 1)
+            boxcolumn = 6
+            index += 6
+        else:
+            squareframe.grid(column = 3)
+            boxcolumn = 0
+        #squares 4 and 7 are a lil special so need extra help getting right values
+        if g == 3:
+            index = 27
+            boxrow = 3
+        if g == 6:
+            index = 54
+            boxrow = 6
+        square += 1
+
+
+
+#what to do if you input a number
+def inset(values, square, row, column):
+    global inputs, board, safe
+    #checking if theres a mistake
+    #set it to true, if theres any mistake it turns false and starts error code
+    good = True
+    #if # already in same row
+    for i in range(9):
+        rownum = i + 9 * row
+        if str(board[rownum]) == str(inputs) and str(inputs) != "":
+            good = False
+        i += 1
+    #if # already in same column
+    for g in range(9):
+        colnum = g * 9 + column
+        if str(board[colnum]) == str(inputs) and str(inputs) != "":
+            good = False
+        g += 1
+    #if # already in same square (squares are extra complicated :/)
+    #for row
+    if square <= 2:
+        strt = 0
+    elif square <= 5:
+        strt = 27
+    else:
+       strt = 54
+    #for column
+    if square == 1 or square == 4 or square == 7:
+        strt += 3
+    elif square == 2 or square == 5 or square == 8:
+        strt += 6
+    sqrnum = strt
+    for f in range(9):
+        if str(board[sqrnum]) == str(inputs) and str(inputs) != "":
+            good = False
+        #increase, if end of square row continue to next, else + 1
+        if sqrnum == (strt + 2) or sqrnum == (strt + 11):
+            sqrnum = sqrnum + 7
+        else:
+            sqrnum += 1
+        f += 1
+
+    #if there wasnt an error, put in values
+    if good == True:
+        if safe[values] == "":
+            board[values] = inputs
+            #destroying the board before recreating it with proper numbers
+            for widget in boardframe.winfo_children():
+                widget.destroy()
+            createboard()
+            win()
+    else:
+        mistaken()
+
+
+
+
+
+
+#first page
+pg1frame = tk.Frame(window)
+
+#title
+topframe = tk.Frame(pg1frame, bg = "#21232C")
+title = tk.Label(topframe, bg = "#21232C", text = "Sudoku", fg = "white", font = ('Arial', 45, "bold"))
+title.pack(pady = (130,0))
+topframe.pack(fill = "x")
+
+#difficulty buttons
+bottomframe = tk.Frame(pg1frame, bg = "#474951", padx = 20, pady = 30)
+bottomframe.columnconfigure(0, weight = 1)
+bottomframe.columnconfigure(1, weight = 1)
+ezbut = tk.Button(bottomframe, text = "Easy", font = ('Arial', 15), height = 2, width = 12, bg = "#21232C", fg = "white", command = lambda: diffi("Easy"))
+ezbut.grid(row = 0, column = 0, sticky = tk.W + tk.E)
+ezbut.config(relief = "solid")
+midbut = tk.Button(bottomframe, text = "Medium", font = ('Arial', 15), height = 2, width = 12, bg = "#21232C", fg = "white", command = lambda: diffi("Medium"))
+midbut.grid(row = 0, column = 1, sticky = tk.W + tk.E)
+midbut.config(relief = "solid")
+hrdbut = tk.Button(bottomframe, text = "Hard", font = ('Arial', 15), height = 2, width = 12, bg = "#21232C", fg = "white", command = lambda: diffi("Hard"))
+hrdbut.grid(row = 1, column = 0, sticky = tk.W + tk.E)
+hrdbut.config(relief = "solid")
+extbut = tk.Button(bottomframe, text = "Extreme", font = ('Arial', 15), height = 2, width = 12, bg = "#21232C", fg = "white", command = lambda: diffi("Extreme"))
+extbut.grid(row = 1, column = 1, sticky = tk.W + tk.E)
+extbut.config(relief = "solid")
+bottomframe.pack(fill = "both", expand = True)
+
+pg1frame.pack(fill = "both", expand = True)
+
+
+
+
+
+
+
+#page 2
+pg2frame = tk.Frame(window, bg = "#21232C")
+
+#info on game :3
+labels = tk.Frame(pg2frame, bg = "#21232C")
+labels.columnconfigure(0, weight = 3)
+mistakes = tk.Label(labels, bg = "#21232C", fg = "red", text = mistake, font = ('Arial', 15))
+mistakes.grid(row = 0, column = 0)
+time = tk.Label(labels, bg = "#21232C", fg = "#474951", text = "0:32", font = ('Arial', 15))
+time.grid(row = 0, column = 2)
+labels.pack(fill = "y")
+
+#sudoku board (actual buttons made in inset() func)
+boardframe = tk.Frame(pg2frame, bd = 2)
+boardframe.config(relief = "solid")
+boardframe.pack(padx = 20, pady = 20)
+
+#select buttons
+buttonframe = tk.Frame(pg2frame, bd = 1)
+buttonframe.config(relief = "solid")
+weird = 0
+for g in range(2):
+    for i in range(5):
+        weird += 1
+        if weird == 10:
+            weird = "C"
+        mychoice = partial(choice, weird)
+        buttn = tk.Button(buttonframe, text = str(weird), bd = 2, font = ('Arial', 26), height = 1, width = 3 , command = mychoice)
+        buttn.grid(row = g, column = i, sticky = tk.W + tk.E)
+        buttn.config(relief = "solid", bg = "#474951", fg = "white")
+        i += 1
+    g += 1
+buttonframe.pack()
+
+
+
+
+
+#page 3
+pg3frame = tk.Frame(window, bg = "#21232C")
+
+#winner
+tpframe = tk.Frame(pg3frame, bg = "#474951")
+won = tk.Label(tpframe, bg = "#474951", text = "You won!", fg = "white", font = ('Arial', 45, "bold"))
+won.pack(pady = (130,0))
+tpframe.pack(fill = "x")
+
+#stats
+bttmframe = tk.Frame(pg3frame, bg = "#21232C", pady = 20)
+bttmframe.columnconfigure(0, weight = 1)
+bttmframe.columnconfigure(1, weight = 1)
+bttmframe.columnconfigure(2, weight = 1)
+cults = tk.Label(bttmframe, bg = "#21232C", fg = "white", text = "Difficulty:", font = ('Arial', 25), pady = 10)
+cults.grid(row = 0, column = 0)
+tim = tk.Label(bttmframe, bg = "#21232C", fg = "white", text = "Time:", font = ('Arial', 25), pady = 10)
+tim.grid(row = 1, column = 0)
+errors = tk.Label(bttmframe, bg = "#21232C", fg = "white", text = "Mistakes:", font = ('Arial', 25), pady = 10)
+errors.grid(row = 2, column = 0)
+diff = tk.Label(bttmframe, bg = "#21232C", fg = "white", font = ('Arial', 25), pady = 10)
+diff.grid(row = 0, column = 1)
+minutes = tk.Label(bttmframe, bg = "#21232C", fg = "white", font = ('Arial', 25), pady = 10)
+minutes.grid(row = 1, column = 1)
+uttatree = tk.Label(bttmframe, bg = "#21232C", fg = "white", font = ('Arial', 25), pady = 10)
+uttatree.grid(row = 2, column = 1)
+bttmframe.pack(fill = "both")
+
+#button
+retrn = tk.Button(pg3frame, text = "Return", bg = "#474951", fg = "white", pady = 15, bd = 2, font = ('Arial', 30), command = lambda: back())
+retrn.config(relief = "solid")
+retrn.pack(fill = "x", padx = 20)
+
+
+
+
+
+#page 4
+pg4frame = tk.Frame(window, bg = "#21232C")
+
+#loser
+tframe = tk.Frame(pg4frame, bg = "#474951")
+loss = tk.Label(tframe, bg = "#474951", text = "You lose!", fg = "white", font = ('Arial', 45, "bold"))
+loss.pack(pady = (130,0))
+tframe.pack(fill = "x")
+
+#button
+retn = tk.Button(pg4frame, text = "Return", bg = "#474951", fg = "white", pady = 15, bd = 2, font = ('Arial', 30), command = lambda: back())
+retn.config(relief = "solid")
+retn.pack(fill = "x", padx = 20, pady = 40)
+
+
+
+window.mainloop()
