@@ -79,28 +79,22 @@ def diffi(culty):
             board.append(easy[i])
             safe.append(easy[i])
             i += 1
-        createboard()
     elif culty == "Medium":
-        board = medium
         for i in range(81):
             board.append(medium[i])
             safe.append(medium[i])
             i += 1
-        createboard()
     elif culty == "Hard":
-        board = hard
         for i in range(81):
             board.append(hard[i])
             safe.append(hard[i])
             i += 1
-        createboard()
     else:
-        board = extreme
         for i in range(81):
             board.append(extreme[i])
             safe.append(extreme[i])
             i += 1
-        createboard()
+    createboard()
     #timer stuff
     timerrnning = True
     timing()
@@ -217,6 +211,7 @@ def mistaken():
 #honestly i have no clue how this works either, its a mess and i am so sorry
 def createboard():
     #index = which individual box, square is 3x3 box, row and column are self explanatory
+    global inputs
     index = 0
     square = 0
     boxrow = 0
